@@ -9,6 +9,8 @@ const express = require("express"); //CommonJS Modules (import/Export in Node.js
 
 const server = express() //creates our server
 
+server.use(express.json()) //<<<<<3 needed (for post and put) to parse json from the body
+
 server.get('/', (req, res)=> {
     //access to 2 things, request object, response object
 res.send({api: "up and running..."})
@@ -29,9 +31,40 @@ server.get('/hubs', (req, res) => {
     })
 })
 
-//add a hub
+//add a hub POST 
+
+server.post('/hubs', (req, res)=>{//grabbing from the body
+    //get the data the client sent (in the req body for post or put )
+const hubData = req.body; //express does not know how to parse JSON (we need to teach it- use a sw/middleware after we create the server above)
+    //call the db and add the hub
+    db.add(hubData)
+    .then(hub => {
+        res.status(201).json(hub)//sending back the hub
+    })
+    .catch(err=>{
+        console.log("error on POST /hubs", err)
+        res.status(500).json({errorMessage: "error adding hub"}) 
+    })
+})
 
 //remove a hub by id
+server.delete('/hubs/:id', (req,res) => { //grabbing from the url
+    const id = req.params.id //all parameters on an object defined on the url are in req.params
+
+    db.remove(id)
+    .then(removed => {
+            if(!removed){
+                //there was no hub with that id
+                res.status(404).json({message: 'hub not found'})
+            }else{
+                res.status(200).json({message: "hub removed successfully"})
+            }
+    })
+    .catch(err=>{
+        console.log("error on DELETE /hubs/:id", err)
+        res.status(500).json({errorMessage: "error removing hub"}) 
+    })
+})
 
 //update a hub by id and the changes
 
